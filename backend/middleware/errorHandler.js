@@ -1,14 +1,30 @@
+// middlewares/errorHandler.js
 
-const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
-  let status = err.statusCode || 500;
-  let message = err.message || 'Server Error';
-  // Handle Mongoose validation errors
-  if (err.name === 'ValidationError') {
-    status = 400;
-    message = Object.values(err.errors).map(val => val.message).join(', ');
+// Custom Error Class (optional)
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode || 500;
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+    this.isOperational = true;
+
+    Error.captureStackTrace(this, this.constructor);
   }
-  res.status(status).json({ message });
+}
+
+// Error handling middleware
+const errorHandler = (err, req, res, next) => {
+  // If error is not an AppError, wrap it
+  if (!(err instanceof AppError)) {
+    err = new AppError(err.message || "Something went wrong!", err.statusCode || 500);
+  }
+
+  console.error("Error 💥:", err);
+
+  res.status(err.statusCode).json({
+    status: err.status,
+    message: err.message,
+  });
 };
 
-export default errorHandler;
+module.exports = { AppError, errorHandler };
