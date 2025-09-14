@@ -1,0 +1,259 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FarmAssist Design System - Natural Agriculture Theme */
+
+@layer base {
+  :root {
+    /* Background and surfaces */
+    --background: 42 15% 97%;
+    --foreground: 25 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 25 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 25% 15%;
+
+    /* Primary - Forest Green */
+    --primary: 94 45% 20%;
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 94 45% 25%;
+
+    /* Secondary - Sage Green */
+    --secondary: 94 25% 55%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* Accent - Earth Brown */
+    --accent: 25 35% 25%;
+    --accent-foreground: 42 25% 90%;
+
+    /* Natural tones */
+    --muted: 42 15% 92%;
+    --muted-foreground: 25 15% 45%;
+
+    --earth-light: 35 25% 75%;
+    --earth-medium: 25 35% 45%;
+    --earth-dark: 25 45% 25%;
+
+    --success: 120 50% 35%;
+    --success-foreground: 0 0% 98%;
+
+    --warning: 45 85% 50%;
+    --warning-foreground: 25 25% 15%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 42 15% 85%;
+    --input: 42 15% 85%;
+    --ring: 94 45% 20%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-earth: linear-gradient(135deg, hsl(var(--earth-light)), hsl(var(--earth-medium)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--secondary) / 0.8));
+
+    /* Shadows */
+    --shadow-natural: 0 4px 20px hsl(var(--primary) / 0.1);
+    --shadow-earth: 0 8px 30px hsl(var(--earth-medium) / 0.15);
+    --shadow-floating: 0 10px 40px hsl(var(--primary) / 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark theme for FarmAssist */
+    --background: 25 25% 8%;
+    --foreground: 42 15% 92%;
+
+    --card: 25 25% 12%;
+    --card-foreground: 42 15% 92%;
+
+    --popover: 25 25% 12%;
+    --popover-foreground: 42 15% 92%;
+
+    --primary: 94 35% 65%;
+    --primary-foreground: 25 25% 8%;
+
+    --secondary: 94 20% 45%;
+    --secondary-foreground: 42 15% 92%;
+
+    --accent: 35 25% 35%;
+    --accent-foreground: 42 15% 92%;
+
+    --muted: 25 15% 20%;
+    --muted-foreground: 42 10% 60%;
+
+    --earth-light: 35 20% 40%;
+    --earth-medium: 25 25% 25%;
+    --earth-dark: 25 35% 15%;
+
+    --success: 120 40% 55%;
+    --success-foreground: 25 25% 8%;
+
+    --warning: 45 75% 65%;
+    --warning-foreground: 25 25% 8%;
+
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 42 15% 92%;
+
+    --border: 25 15% 25%;
+    --input: 25 15% 25%;
+    --ring: 94 35% 65%;
+
+    --sidebar-background: 25 25% 10%;
+    --sidebar-foreground: 42 15% 85%;
+    --sidebar-primary: 94 35% 65%;
+    --sidebar-primary-foreground: 25 25% 8%;
+    --sidebar-accent: 25 15% 20%;
+    --sidebar-accent-foreground: 42 15% 85%;
+    --sidebar-border: 25 15% 25%;
+    --sidebar-ring: 94 35% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-medium;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer components {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .hover-lift {
+    transition: var(--transition-smooth);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-floating);
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-earth {
+    background: var(--gradient-earth);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .shadow-natural {
+    box-shadow: var(--shadow-natural);
+  }
+
+  .shadow-earth {
+    box-shadow: var(--shadow-earth);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
