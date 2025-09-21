@@ -1,50 +1,48 @@
-import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+// backend/middlewares/authMiddleware.js
 
-// Protect routes (require login)
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import { AppError } from './errorHandler.js';
+
+// Protect routes: verify JWT
 export const protect = async (req, res, next) => {
   let token;
 
   try {
+    let token;
     if (
       req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
+      req.headers.authorization.startsWith('Bearer')
     ) {
-      token = req.headers.authorization.split(" ")[1];
-
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Attach user to request (exclude password)
-      req.user = await User.findById(decoded.id).select("-password");
-      if (!req.user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-
-      next();
-    } else {
-      return res.status(401).json({ message: "Not authorized, no token" });
+      token = req.headers.authorization.split(' ')[1];
     }
+
+    if (!token) {
+      return next(new AppError('Not authorized, token missing', 401));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    req.user = user; // attach user to request
+    next();
   } catch (error) {
-    console.error(error);
-    return res.status(401).json({ message: "Not authorized, token failed" });
+    return next(new AppError('Not authorized', 401));
   }
 };
 
-// Allow only Dealers
-export const dealerOnly = (req, res, next) => {
-  if (req.user && req.user.role === "dealer") {
+// Restrict to specific roles
+export const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError('You do not have permission to perform this action', 403)
+      );
+    }
     next();
-  } else {
-    return res.status(403).json({ message: "Access denied: Dealers only" });
-  }
-};
-
-// Allow only Admins
-export const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    return res.status(403).json({ message: "Access denied: Admins only" });
-  }
+  };
 };

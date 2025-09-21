@@ -143,7 +143,7 @@ const CategoriesSection: React.FC = () => {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
             <Link 
-              to="/dealers" 
+              to="/register?role=dealer" 
               className="inline-flex items-center justify-center px-6 py-3 border border-border rounded-lg hover:bg-accent transition-colors font-medium"
             >
               Become a Dealer

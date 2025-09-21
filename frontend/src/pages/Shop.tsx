@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -21,10 +21,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import axios from "axios";
+
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  category: string;
+  rating?: number;
+  reviews?: number;
+  discount?: number;
+  inStock?: boolean;
+  dealer?: string;
+}
 
 const Shop = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
 
   const categories = [
     'All Categories',
@@ -36,78 +52,21 @@ const Shop = () => {
     'Tools'
   ];
 
-  const products = [
-    {
-      id: 1,
-      name: 'Premium Tomato Seeds',
-      price: 299,
-      originalPrice: 399,
-      image: 'https://images.unsplash.com/photo-1592841200221-76c4657d8aba?w=400',
-      category: 'Seeds',
-      rating: 4.5,
-      reviews: 128,
-      discount: 25,
-      inStock: true,
-      dealer: 'Green Valley Seeds'
-    },
-    {
-      id: 2,
-      name: 'Organic NPK Fertilizer',
-      price: 850,
-      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',
-      category: 'Fertilizers',
-      rating: 4.8,
-      reviews: 89,
-      inStock: true,
-      dealer: 'EcoFarm Solutions'
-    },
-    {
-      id: 3,
-      name: 'Advanced Pest Control Spray',
-      price: 650,
-      image: 'https://images.unsplash.com/photo-1574787503555-25888c22bbbc?w=400',
-      category: 'Pesticides',
-      rating: 4.3,
-      reviews: 67,
-      inStock: false,
-      dealer: 'CropGuard Pro'
-    },
-    {
-      id: 4,
-      name: 'Smart Irrigation System',
-      price: 12500,
-      image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400',
-      category: 'Equipment',
-      rating: 4.9,
-      reviews: 34,
-      inStock: true,
-      dealer: 'AgroTech India'
-    },
-    {
-      id: 5,
-      name: 'Organic Compost Mix',
-      price: 450,
-      image: 'https://images.unsplash.com/photo-1416238134140-bdf8ba1e3900?w=400',
-      category: 'Organic',
-      rating: 4.6,
-      reviews: 156,
-      inStock: true,
-      dealer: 'Nature\'s Best'
-    },
-    {
-      id: 6,
-      name: 'Professional Garden Tool Set',
-      price: 2800,
-      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',
-      category: 'Tools',
-      rating: 4.4,
-      reviews: 92,
-      inStock: true,
-      dealer: 'ToolMaster Pro'
+  // ✅ Fetch products from backend
+  const fetchProducts = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/products"); // adjust if API is different
+      setProducts(res.data);
+    } catch (error) {
+      console.error("Error fetching products:", error);
     }
-  ];
+  };
 
-  const renderStars = (rating: number) => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const renderStars = (rating: number = 0) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
@@ -239,7 +198,7 @@ const Shop = () => {
                   : 'grid-cols-1'
               }`}>
                 {products.map((product) => (
-                  <Card key={product.id} className="group hover-lift">
+                  <Card key={product._id} className="group hover-lift">
                     <CardHeader className="p-0">
                       <div className="relative overflow-hidden rounded-t-lg">
                         <img
@@ -252,7 +211,7 @@ const Shop = () => {
                             {product.discount}% OFF
                           </Badge>
                         )}
-                        {!product.inStock && (
+                        {product.inStock === false && (
                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <Badge variant="secondary">Out of Stock</Badge>
                           </div>
@@ -270,13 +229,17 @@ const Shop = () => {
                         <div className="flex items-center">
                           {renderStars(product.rating)}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          ({product.reviews})
-                        </span>
+                        {product.reviews && (
+                          <span className="text-sm text-muted-foreground">
+                            ({product.reviews})
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        by {product.dealer}
-                      </p>
+                      {product.dealer && (
+                        <p className="text-sm text-muted-foreground mb-3">
+                          by {product.dealer}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2">
                         <span className="text-xl font-bold text-primary">
                           ₹{product.price}
@@ -291,7 +254,7 @@ const Shop = () => {
                     <CardFooter className="p-4 pt-0 flex gap-2">
                       <Button 
                         className="flex-1" 
-                        disabled={!product.inStock}
+                        disabled={product.inStock === false}
                       >
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         Add to Cart

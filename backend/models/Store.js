@@ -1,5 +1,5 @@
 // models/Store.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const storeSchema = new mongoose.Schema(
   {
@@ -26,4 +26,4 @@ const storeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Store", storeSchema);
+export default mongoose.model("Store", storeSchema);

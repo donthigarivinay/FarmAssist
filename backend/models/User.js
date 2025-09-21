@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     name: { type: String, required: true },
-    email: { type: String, unique: true, required: true, lowercase: true },
+    email: { type: String, unique: true, required: true },
     password: { type: String, required: true, minlength: 6, select: false },
     mobile: { type: String, required: true },
     address: { type: String },
@@ -17,7 +17,6 @@ const userSchema = new mongoose.Schema(
       lat: { type: Number },
       lng: { type: Number },
     },
-    userId: { type: Number, unique: true, index: true },
     profileImage: { type: String }, // URL or base64 string
 
     // Farmer-specific
@@ -29,11 +28,17 @@ const userSchema = new mongoose.Schema(
     // Dealer-specific
     shopLicenseNumber: { type: String },
     shopLicenseImage: { type: String }, // URL or base64
+    shopNumber: { type: String },       // ✅ NEW FIELD
+    licenseId: { type: String },        // ✅ NEW FIELD
+    shopAddress: { type: String },      // ✅ NEW FIELD
 
     // Delivery agent-specific
     vehicleType: { type: String },
     vehicleNumber: { type: String },
     drivingLicenseImage: { type: String },
+
+    // ✅ New field for delivery agent online/offline status
+    isActive: { type: Boolean, default: false },
   },
   { timestamps: true } // auto adds createdAt & updatedAt
 );

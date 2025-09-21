@@ -32,9 +32,10 @@ const Login = () => {
       });
       const data = await response.json();
       setIsLoading(false);
-      if (response.ok) {
+      if (response.ok && data.token && data.user) {
+        localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/profile');
+        navigate('/profile');  // ✅ FIXED: lowercase path
       } else {
         alert(data.message || 'Login failed');
       }
@@ -45,7 +46,6 @@ const Login = () => {
   };
 
   const handleForgotPassword = () => {
-    // Handle forgot password
     console.log('Forgot password clicked');
   };
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { MapPin, Package, Clock, CheckCircle, Truck, Phone, User } from "lucide-
 import { useToast } from "@/hooks/use-toast";
 
 interface DeliveryOrder {
-  id: string;
+  _id: string;
   orderId: string;
   customerName: string;
   customerPhone: string;
@@ -29,69 +29,58 @@ interface DeliveryOrder {
 
 const DeliveryDashboard = () => {
   const { toast } = useToast();
-  const [orders, setOrders] = useState<DeliveryOrder[]>([
-    {
-      id: "1",
-      orderId: "ORD001",
-      customerName: "Rajesh Kumar",
-      customerPhone: "+91 98765 43210",
-      customerAddress: "Village Kharadi, Taluka Maval, District Pune, Maharashtra - 412345",
-      products: [
-        { name: "Premium Wheat Seeds", quantity: 2, price: 250 },
-        { name: "Organic Fertilizer", quantity: 1, price: 450 }
-      ],
-      totalAmount: 950,
-      status: "assigned",
-      assignedDate: "2024-01-15",
-      priority: "high"
-    },
-    {
-      id: "2",
-      orderId: "ORD002",
-      customerName: "Sunita Patil",
-      customerPhone: "+91 87654 32109",
-      customerAddress: "Farm House 23, Shirur Road, Pune, Maharashtra - 411028",
-      products: [
-        { name: "Pesticide Spray", quantity: 3, price: 300 }
-      ],
-      totalAmount: 900,
-      status: "picked_up",
-      assignedDate: "2024-01-14",
-      priority: "medium"
-    },
-    {
-      id: "3",
-      orderId: "ORD003",
-      customerName: "Mahesh Desai",
-      customerPhone: "+91 76543 21098",
-      customerAddress: "Plot 45, Agriculture Zone, Nashik, Maharashtra - 422001",
-      products: [
-        { name: "Farming Tools Kit", quantity: 1, price: 1200 }
-      ],
-      totalAmount: 1200,
-      status: "in_transit",
-      assignedDate: "2024-01-13",
-      priority: "low"
+  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
+
+  // ✅ Fetch orders assigned to this delivery agent
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("/api/orders/my-deliveries", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        const data = await res.json();
+        setOrders(data);
+      } catch (err) {
+        console.error("Error fetching delivery orders", err);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  // ✅ Update status in both UI + backend
+  const updateOrderStatus = async (orderId: string, newStatus: DeliveryOrder["status"]) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      setOrders(prev =>
+        prev.map(order =>
+          order._id === orderId
+            ? {
+                ...order,
+                status: newStatus,
+                deliveryDate: newStatus === "delivered" ? new Date().toISOString().split("T")[0] : order.deliveryDate,
+              }
+            : order
+        )
+      );
+
+      toast({
+        title: "Status Updated",
+        description: `Order ${data.order.orderId} marked as ${newStatus.replace("_", " ")}`,
+      });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     }
-  ]);
-
-  const updateOrderStatus = (orderId: string, newStatus: DeliveryOrder["status"]) => {
-    setOrders(prev =>
-      prev.map(order =>
-        order.id === orderId
-          ? {
-              ...order,
-              status: newStatus,
-              deliveryDate: newStatus === "delivered" ? new Date().toISOString().split('T')[0] : order.deliveryDate
-            }
-          : order
-      )
-    );
-
-    toast({
-      title: "Status Updated",
-      description: `Order ${orders.find(o => o.id === orderId)?.orderId} marked as ${newStatus.replace('_', ' ')}`
-    });
   };
 
   const getStatusColor = (status: DeliveryOrder["status"]) => {
@@ -126,21 +115,21 @@ const DeliveryDashboard = () => {
   const stats = {
     totalOrders: orders.length,
     pendingDeliveries: orders.filter(o => o.status !== "delivered").length,
-    completedToday: orders.filter(o => o.status === "delivered" && o.deliveryDate === new Date().toISOString().split('T')[0]).length,
-    inTransit: orders.filter(o => o.status === "in_transit").length
+    completedToday: orders.filter(o => o.status === "delivered" && o.deliveryDate === new Date().toISOString().split("T")[0]).length,
+    inTransit: orders.filter(o => o.status === "in_transit").length,
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header cartItemsCount={0} isLoggedIn={true} userRole="deliveryAgent" />
-      
+
       <main className="container mx-auto px-4 py-8 mt-16">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Delivery Dashboard</h1>
           <p className="text-muted-foreground">Manage your delivery assignments</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="hover-scale">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -192,7 +181,7 @@ const DeliveryDashboard = () => {
           <CardContent>
             <div className="space-y-6">
               {orders.map((order) => (
-                <Card key={order.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
+                <Card key={order._id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
@@ -204,15 +193,13 @@ const DeliveryDashboard = () => {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                           <span>Assigned: {order.assignedDate}</span>
-                          {order.deliveryDate && (
-                            <span>Delivered: {order.deliveryDate}</span>
-                          )}
+                          {order.deliveryDate && <span>Delivered: {order.deliveryDate}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(order.status)}
                         <Badge variant={getStatusColor(order.status)}>
-                          {order.status.replace('_', ' ')}
+                          {order.status.replace("_", " ")}
                         </Badge>
                       </div>
                     </div>
@@ -261,37 +248,26 @@ const DeliveryDashboard = () => {
                     {/* Action Buttons */}
                     <div className="flex gap-2 mt-6 pt-4 border-t">
                       {order.status === "assigned" && (
-                        <Button
-                          size="sm"
-                          onClick={() => updateOrderStatus(order.id, "picked_up")}
-                        >
+                        <Button size="sm" onClick={() => updateOrderStatus(order._id, "picked_up")}>
                           Mark as Picked Up
                         </Button>
                       )}
                       {order.status === "picked_up" && (
-                        <Button
-                          size="sm"
-                          onClick={() => updateOrderStatus(order.id, "in_transit")}
-                        >
+                        <Button size="sm" onClick={() => updateOrderStatus(order._id, "in_transit")}>
                           Mark as In Transit
                         </Button>
                       )}
                       {order.status === "in_transit" && (
-                        <Button
-                          size="sm"
-                          variant="success"
-                          onClick={() => updateOrderStatus(order.id, "delivered")}
-                        >
+                        <Button size="sm" variant="success" onClick={() => updateOrderStatus(order._id, "delivered")}>
                           Mark as Delivered
                         </Button>
                       )}
                       {order.status === "delivered" && (
                         <Badge variant="default" className="flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          Completed
+                          <CheckCircle className="w-3 h-3" /> Completed
                         </Badge>
                       )}
-                      
+
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm">
@@ -308,7 +284,7 @@ const DeliveryDashboard = () => {
                             </p>
                             <Select
                               value={order.status}
-                              onValueChange={(value) => updateOrderStatus(order.id, value as DeliveryOrder["status"])}
+                              onValueChange={(value) => updateOrderStatus(order._id, value as DeliveryOrder["status"])}
                             >
                               <SelectTrigger>
                                 <SelectValue />

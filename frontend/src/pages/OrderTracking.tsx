@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -10,7 +10,6 @@ import {
   Package, 
   Truck, 
   CheckCircle, 
-  Clock, 
   MapPin, 
   Phone, 
   Calendar,
@@ -29,7 +28,6 @@ interface TrackingEvent {
 const OrderTracking = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId') || 'ORD123456789';
-  const [progress, setProgress] = useState(25);
 
   const orderDetails = {
     orderId,
@@ -42,8 +40,7 @@ const OrderTracking = () => {
     total: 950,
     orderDate: '2024-01-15',
     estimatedDelivery: '2024-01-18',
-    deliveryAddress: 'Village Kharadi, Taluka Maval, District Pune, Maharashtra - 412345',
-    currentStatus: 'processing'
+    deliveryAddress: 'Village Kharadi, Taluka Maval, District Pune, Maharashtra - 412345'
   };
 
   const trackingEvents: TrackingEvent[] = [
@@ -88,36 +85,21 @@ const OrderTracking = () => {
     }
   ];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) return 100;
-        return prev + 1;
-      });
-    }, 100);
-
-    return () => clearInterval(timer);
-  }, []);
+  const completedSteps = trackingEvents.filter(event => event.completed).length;
+  const progressPercentage = (completedSteps / trackingEvents.length) * 100;
 
   const getStatusIcon = (status: string, completed: boolean) => {
     if (completed) {
       return <CheckCircle className="w-5 h-5 text-success" />;
     }
-    
-    switch (status) {
-      case 'Processing':
-      case 'Packed':
-        return <Package className="w-5 h-5 text-primary" />;
-      case 'Shipped':
-      case 'Out for Delivery':
-        return <Truck className="w-5 h-5 text-primary" />;
-      default:
-        return <Clock className="w-5 h-5 text-muted-foreground" />;
+    if (status === 'Processing' || status === 'Packed') {
+      return <Package className="w-5 h-5 text-primary" />;
     }
+    if (status === 'Shipped' || status === 'Out for Delivery') {
+      return <Truck className="w-5 h-5 text-primary" />;
+    }
+    return <Package className="w-5 h-5 text-muted-foreground" />;
   };
-
-  const completedSteps = trackingEvents.filter(event => event.completed).length;
-  const progressPercentage = (completedSteps / trackingEvents.length) * 100;
 
   return (
     <div className="min-h-screen bg-background">

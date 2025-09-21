@@ -6,7 +6,7 @@ import {
   updateProduct,
   deleteProduct
 } from '../controllers/productController.js';
-import { protect, restrictTo } from '../middlewares/authMiddleware.js';
+import { protect, restrictTo } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,8 +15,8 @@ router.get('/', getProducts);          // Get all products
 router.get('/:id', getProductById);   // Get single product by ID
 
 // Protected routes (dealers only)
-router.post('/', protect, restrictTo('dealer'), createProduct);
-router.put('/:id', protect, restrictTo('dealer'), updateProduct);
-router.delete('/:id', protect, restrictTo('dealer'), deleteProduct);
+router.post('/', protect, restrictTo('dealer'), createProduct); // 🔹 dealerId handled in controller
+router.put('/:id', protect, restrictTo('dealer'), updateProduct); // 🔹 dealerId check handled
+router.delete('/:id', protect, restrictTo('dealer'), deleteProduct); // 🔹 dealerId check handled
 
 export default router;

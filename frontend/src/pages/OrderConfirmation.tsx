@@ -18,16 +18,24 @@ import {
 
 const OrderConfirmation = () => {
   const location = useLocation();
-  const orderData = location.state || {
-    orderId: 'ORD' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-    items: [
-      { name: 'Premium Wheat Seeds', quantity: 2, price: 250 },
-      { name: 'Organic Fertilizer', quantity: 1, price: 450 }
-    ],
-    total: 950,
-    paymentMethod: 'Credit Card',
-    deliveryAddress: '123 Farm Road, Agriculture City, State - 123456'
-  };
+  const orderData = location.state;
+
+  // ✅ If no order data, show fallback
+  if (!orderData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header cartItemsCount={0} isLoggedIn={true} />
+        <main className="container mx-auto px-4 py-8 mt-16 text-center">
+          <h1 className="text-2xl font-bold">No Order Found</h1>
+          <p className="text-muted-foreground mt-2">It looks like you didn’t place an order.</p>
+          <Link to="/shop">
+            <Button className="mt-6">Go to Shop</Button>
+          </Link>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const estimatedDelivery = new Date();
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 3);
@@ -44,7 +52,9 @@ const OrderConfirmation = () => {
               <CheckCircle className="w-10 h-10 text-success animate-scale-in" />
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Order Confirmed!</h1>
-            <p className="text-muted-foreground">Thank you for your order. We've received your payment and are preparing your items.</p>
+            <p className="text-muted-foreground">
+              Thank you for your order. We've received your payment and are preparing your items.
+            </p>
           </div>
 
           {/* Order Details Card */}
@@ -66,7 +76,7 @@ const OrderConfirmation = () => {
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-3">Items Ordered:</h4>
                 <div className="space-y-2">
-                  {orderData.items.map((item: any, index: number) => (
+                  {orderData.items?.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between">
                       <span>{item.name} × {item.quantity}</span>
                       <span>₹{(item.price * item.quantity).toLocaleString()}</span>
@@ -75,22 +85,28 @@ const OrderConfirmation = () => {
                 </div>
                 <div className="border-t mt-3 pt-3 flex justify-between font-bold">
                   <span>Total Amount:</span>
-                  <span>₹{orderData.total.toLocaleString()}</span>
+                  <span>₹{orderData.total?.toLocaleString()}</span>
                 </div>
               </div>
 
               <div className="border-t pt-4 space-y-2">
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">Payment Method: {orderData.paymentMethod}</span>
+                  <span className="text-sm">
+                    Payment Method: {orderData.paymentMethod}
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                  <span className="text-sm">Delivery Address: {orderData.deliveryAddress}</span>
+                  <span className="text-sm">
+                    Delivery Address: {orderData.deliveryAddress}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">Estimated Delivery: {estimatedDelivery.toLocaleDateString()}</span>
+                  <span className="text-sm">
+                    Estimated Delivery: {estimatedDelivery.toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -112,7 +128,9 @@ const OrderConfirmation = () => {
                   </div>
                   <div>
                     <p className="font-medium">Order Confirmed</p>
-                    <p className="text-sm text-muted-foreground">Your order has been received and confirmed</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your order has been received and confirmed
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 opacity-50">
@@ -121,7 +139,9 @@ const OrderConfirmation = () => {
                   </div>
                   <div>
                     <p className="font-medium">Processing</p>
-                    <p className="text-sm text-muted-foreground">We're preparing your items for shipment</p>
+                    <p className="text-sm text-muted-foreground">
+                      We're preparing your items for shipment
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 opacity-50">
@@ -130,7 +150,9 @@ const OrderConfirmation = () => {
                   </div>
                   <div>
                     <p className="font-medium">Shipped</p>
-                    <p className="text-sm text-muted-foreground">Your order is on the way</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your order is on the way
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 opacity-50">
@@ -139,7 +161,9 @@ const OrderConfirmation = () => {
                   </div>
                   <div>
                     <p className="font-medium">Delivered</p>
-                    <p className="text-sm text-muted-foreground">Package delivered successfully</p>
+                    <p className="text-sm text-muted-foreground">
+                      Package delivered successfully
+                    </p>
                   </div>
                 </div>
               </div>
@@ -174,14 +198,10 @@ const OrderConfirmation = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Link to={`/order-tracking?orderId=${orderData.orderId}`} className="flex-1">
-              <Button className="w-full">
-                Track Your Order
-              </Button>
+              <Button className="w-full">Track Your Order</Button>
             </Link>
             <Link to="/shop" className="flex-1">
-              <Button variant="outline" className="w-full">
-                Continue Shopping
-              </Button>
+              <Button variant="outline" className="w-full">Continue Shopping</Button>
             </Link>
           </div>
         </div>

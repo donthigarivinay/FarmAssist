@@ -34,6 +34,7 @@ const Cart = () => {
       id: 2,
       name: 'Organic NPK Fertilizer',
       price: 850,
+      originalPrice: 950,
       quantity: 1,
       image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',
       dealer: 'EcoFarm Solutions',
@@ -43,6 +44,7 @@ const Cart = () => {
       id: 3,
       name: 'Smart Irrigation System',
       price: 12500,
+      originalPrice: 13500,
       quantity: 1,
       image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400',
       dealer: 'AgroTech India',
@@ -76,9 +78,10 @@ const Cart = () => {
   const total = subtotal + shipping;
 
   const applyCoupon = () => {
-    // Handle coupon application
     console.log('Applying coupon:', couponCode);
   };
+
+  const hasInStockItems = cartItems.some(item => item.inStock);
 
   if (cartItems.length === 0) {
     return (
@@ -257,8 +260,9 @@ const Cart = () => {
                     </div>
                   </div>
                   
-                  <Link to="/checkout" className="block">
-                    <Button className="w-full" size="lg">
+                  {/* 🔹 Changed checkout link here */}
+                  <Link to={hasInStockItems ? "/order" : "#"} className="block">
+                    <Button className="w-full" size="lg" disabled={!hasInStockItems}>
                       Proceed to Checkout
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>

@@ -23,18 +23,18 @@ import {
 
 interface HeaderProps {
   cartItemsCount?: number;
-  userRole?: 'farmer' | 'dealer' | 'deliveryAgent' | null;
-  isLoggedIn?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  cartItemsCount = 0, 
-  userRole = null, 
-  isLoggedIn = false 
-}) => {
+const Header: React.FC<HeaderProps> = ({ cartItemsCount = 0 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+
+  // Get user info and token
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const token = localStorage.getItem('token');
+  const isLoggedIn = !!token;
+  const userRole = user?.role || null;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -46,9 +46,11 @@ const Header: React.FC<HeaderProps> = ({
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  // Logout logic
   const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
   };
 
   const getRoleBasedDashboard = () => {
@@ -150,10 +152,15 @@ const Header: React.FC<HeaderProps> = ({
                     )}
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate(getRoleBasedDashboard())}>
-                    <Package className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </DropdownMenuItem>
+
+                  {/* Show Dashboard only for dealer and deliveryAgent */}
+                  {(userRole === 'dealer' || userRole === 'deliveryAgent') && (
+                    <DropdownMenuItem onClick={() => navigate(getRoleBasedDashboard())}>
+                      <Package className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </DropdownMenuItem>
+                  )}
+
                   <DropdownMenuItem onClick={() => navigate('/profile')}>
                     <Settings className="mr-2 h-4 w-4" />
                     Profile Settings

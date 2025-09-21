@@ -3,7 +3,8 @@ import Product from "../models/Product.js";
 // Get all products
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate("dealer", "name email");
+    // 🔹 Populate dealerId to match new schema
+    const products = await Product.find().populate("dealerId", "name email");
     res.status(200).json(products);
   } catch (error) {
     console.error(error);
@@ -14,7 +15,8 @@ export const getProducts = async (req, res) => {
 // Get single product by ID
 export const getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate("dealer", "name email");
+    // 🔹 Populate dealerId to match new schema
+    const product = await Product.findById(req.params.id).populate("dealerId", "name email");
     if (!product) return res.status(404).json({ message: "Product not found" });
     res.status(200).json(product);
   } catch (error) {
@@ -26,15 +28,18 @@ export const getProductById = async (req, res) => {
 // Create new product (Dealer only)
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, stock, category } = req.body;
+    // 🔹 Updated fields to match new schema: quantity, dealerId, storeLocation, default image
+    const { name, description, price, quantity, category, image, storeLocation } = req.body;
 
     const product = new Product({
       name,
       description,
       price,
-      stock,
+      quantity: quantity || 0, // 🔹 default to 0 if not provided
       category,
-      dealer: req.user.id // from auth middleware
+      image: image || "/placeholder.svg", // 🔹 default image
+      dealerId: req.user.id, // 🔹 updated field
+      storeLocation // 🔹 optional, new field
     });
 
     await product.save();
@@ -48,8 +53,9 @@ export const createProduct = async (req, res) => {
 // Update product (Dealer only)
 export const updateProduct = async (req, res) => {
   try {
+    // 🔹 Updated field to dealerId to match schema
     const product = await Product.findOneAndUpdate(
-      { _id: req.params.id, dealer: req.user.id },
+      { _id: req.params.id, dealerId: req.user.id },
       req.body,
       { new: true }
     );
@@ -65,7 +71,8 @@ export const updateProduct = async (req, res) => {
 // Delete product (Dealer only)
 export const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findOneAndDelete({ _id: req.params.id, dealer: req.user.id });
+    // 🔹 Updated field to dealerId to match schema
+    const product = await Product.findOneAndDelete({ _id: req.params.id, dealerId: req.user.id });
     if (!product) return res.status(404).json({ message: "Product not found or unauthorized" });
     res.status(200).json({ message: "Product deleted" });
   } catch (error) {

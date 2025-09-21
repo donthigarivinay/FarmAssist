@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
-import { Check, ChevronRight, Circle } from "lucide-react"
+import { Check, ChevronRight, Circle, ShoppingCart, CreditCard } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -64,7 +64,17 @@ const ContextMenuContent = React.forwardRef<
         className
       )}
       {...props}
-    />
+    >
+      {/* ✅ Added Example Items */}
+      <ContextMenuItem inset>
+        <ShoppingCart className="mr-2 h-4 w-4" />
+        Add to Cart
+      </ContextMenuItem>
+      <ContextMenuItem inset>
+        <CreditCard className="mr-2 h-4 w-4" />
+        Buy Now
+      </ContextMenuItem>
+    </ContextMenuPrimitive.Content>
   </ContextMenuPrimitive.Portal>
 ))
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName
