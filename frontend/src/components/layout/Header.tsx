@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ cartItemsCount = 0 }) => {
   const navItems = [
     { name: 'Home', path: '/' },
     { name: 'Shop', path: '/shop' },
-    { name: 'Categories', path: '/categories' },
+    // { name: 'Categories', path: '/categories' },
     { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];

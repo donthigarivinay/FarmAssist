@@ -1,26 +1,46 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  CheckCircle, 
-  Package, 
-  MapPin, 
-  Calendar, 
-  CreditCard,
-  Truck,
-  Phone,
-  Mail
-} from 'lucide-react';
+import { CheckCircle, Package, MapPin, Calendar, CreditCard, Truck, Phone, Mail } from 'lucide-react';
 
 const OrderConfirmation = () => {
   const location = useLocation();
-  const orderData = location.state;
+  const [orderData, setOrderData] = useState<any>(location.state || null);
+  const [userEmail, setUserEmail] = useState<string>('');
 
-  // ✅ If no order data, show fallback
+  useEffect(() => {
+    // Get current logged-in user email
+    const userData = localStorage.getItem('user');
+    const email = userData ? JSON.parse(userData).email : '';
+    setUserEmail(email);
+
+    // Fallback to last order stored in localStorage
+    if (!orderData) {
+      const storedOrder = JSON.parse(localStorage.getItem('lastOrder') || 'null');
+      if (storedOrder) setOrderData(storedOrder);
+    }
+  }, [orderData]);
+
+  useEffect(() => {
+    if (orderData && userEmail) {
+      // Get existing orders
+      const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+
+      // Avoid duplicate order
+      const exists = existingOrders.some((o: any) => o.orderId === orderData.orderId);
+      if (!exists) {
+        const newOrder = { ...orderData, customerEmail: userEmail, status: 'Processing' };
+        existingOrders.push(newOrder);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
+        localStorage.setItem('lastOrder', JSON.stringify(newOrder));
+      }
+    }
+  }, [orderData, userEmail]);
+
   if (!orderData) {
     return (
       <div className="min-h-screen bg-background">
@@ -79,7 +99,7 @@ const OrderConfirmation = () => {
                   {orderData.items?.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between">
                       <span>{item.name} × {item.quantity}</span>
-                      <span>₹{(item.price * item.quantity).toLocaleString()}</span>
+                      <span>₹{(item.price * (item.quantity || 1)).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
@@ -99,7 +119,7 @@ const OrderConfirmation = () => {
                 <div className="flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
                   <span className="text-sm">
-                    Delivery Address: {orderData.deliveryAddress}
+                    Delivery Address: {orderData.deliveryAddress || 'Not Provided'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -122,50 +142,17 @@ const OrderConfirmation = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-white" />
+                {['Order Confirmed', 'Processing', 'Shipped', 'Delivered'].map((status, idx) => (
+                  <div key={idx} className={`flex items-center gap-4 ${orderData.status === status ? 'opacity-100' : 'opacity-50'}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${orderData.status === status ? 'bg-success' : 'bg-muted'}`}>
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{status}</p>
+                      <p className="text-sm text-muted-foreground">{statusDescriptions(status)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">Order Confirmed</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your order has been received and confirmed
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 opacity-50">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <Package className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Processing</p>
-                    <p className="text-sm text-muted-foreground">
-                      We're preparing your items for shipment
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 opacity-50">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <Truck className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Shipped</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your order is on the way
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 opacity-50">
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Delivered</p>
-                    <p className="text-sm text-muted-foreground">
-                      Package delivered successfully
-                    </p>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -210,6 +197,22 @@ const OrderConfirmation = () => {
       <Footer />
     </div>
   );
+};
+
+// Helper to get descriptions
+const statusDescriptions = (status: string) => {
+  switch (status) {
+    case 'Order Confirmed':
+      return 'Your order has been received and confirmed';
+    case 'Processing':
+      return "We're preparing your items for shipment";
+    case 'Shipped':
+      return 'Your order is on the way';
+    case 'Delivered':
+      return 'Package delivered successfully';
+    default:
+      return '';
+  }
 };
 
 export default OrderConfirmation;

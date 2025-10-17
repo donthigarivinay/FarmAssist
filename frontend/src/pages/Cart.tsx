@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Minus, 
-  Plus, 
-  Trash2, 
-  ShoppingBag, 
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingBag,
   ArrowRight,
   Tag,
   Truck,
@@ -19,60 +19,48 @@ import {
 } from 'lucide-react';
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      name: 'Premium Tomato Seeds',
-      price: 299,
-      originalPrice: 399,
-      quantity: 2,
-      image: 'https://images.unsplash.com/photo-1592841200221-76c4657d8aba?w=400',
-      dealer: 'Green Valley Seeds',
-      inStock: true
-    },
-    {
-      id: 2,
-      name: 'Organic NPK Fertilizer',
-      price: 850,
-      originalPrice: 950,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400',
-      dealer: 'EcoFarm Solutions',
-      inStock: true
-    },
-    {
-      id: 3,
-      name: 'Smart Irrigation System',
-      price: 12500,
-      originalPrice: 13500,
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=400',
-      dealer: 'AgroTech India',
-      inStock: false
-    }
-  ]);
-
+  const [cartItems, setCartItems] = useState([]);
   const [couponCode, setCouponCode] = useState('');
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      removeItem(id);
-      return;
-    }
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+  // Get current user email (fallback to 'guest')
+  const getCurrentUser = () => {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    return user?.email || 'guest';
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const getCartKey = () => `cartItems_${getCurrentUser()}`;
+
+  // Load cart items from localStorage
+  useEffect(() => {
+    const storedCart = JSON.parse(localStorage.getItem(getCartKey())) || [];
+    setCartItems(storedCart);
+  }, []);
+
+  // Save updated cart items to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(getCartKey(), JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  const updateQuantity = (id, newQuantity) => {
+    const updated = cartItems.map(item => {
+      if (item._id === id) {
+        const finalQuantity = Math.max(newQuantity, 1); // minimum 1
+        return { ...item, quantity: finalQuantity };
+      }
+      return item;
+    });
+    setCartItems(updated);
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const savings = cartItems.reduce((sum, item) => 
-    sum + ((item.originalPrice || item.price) - item.price) * item.quantity, 0
+  const removeItem = (id) => {
+    const updated = cartItems.filter(item => item._id !== id);
+    setCartItems(updated);
+  };
+
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
+  const savings = cartItems.reduce(
+    (sum, item) => sum + ((item.originalPrice || item.price) - item.price) * (item.quantity || 1),
+    0
   );
   const shipping = subtotal > 1000 ? 0 : 50;
   const total = subtotal + shipping;
@@ -81,13 +69,13 @@ const Cart = () => {
     console.log('Applying coupon:', couponCode);
   };
 
-  const hasInStockItems = cartItems.some(item => item.inStock);
+  // Check inStock: true if quantity > 0
+  const hasInStockItems = cartItems.some(item => (item.quantity || 0) > 0);
 
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <Header cartItemsCount={0} userRole={null} isLoggedIn={false} />
-        
         <main className="pt-16">
           <div className="container mx-auto px-4 py-16">
             <Card className="max-w-md mx-auto text-center">
@@ -107,7 +95,6 @@ const Cart = () => {
             </Card>
           </div>
         </main>
-        
         <Footer />
       </div>
     );
@@ -115,8 +102,12 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header cartItemsCount={cartItems.length} userRole={null} isLoggedIn={false} />
-      
+      <Header
+        cartItemsCount={cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0)}
+        userRole={null}
+        isLoggedIn={false}
+      />
+
       <main className="pt-16">
         {/* Page Header */}
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12">
@@ -137,72 +128,73 @@ const Cart = () => {
                   <CardTitle>Cart Items ({cartItems.length})</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold">{item.name}</h3>
-                            <p className="text-sm text-muted-foreground">by {item.dealer}</p>
-                            {!item.inStock && (
-                              <Badge variant="destructive" className="mt-1">
-                                Out of Stock
-                              </Badge>
-                            )}
+                  {cartItems.map((item) => {
+                    const inStock = (item.quantity || 0) > 0;
+                    return (
+                      <div key={item._id} className="flex gap-4 p-4 border rounded-lg">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-20 h-20 object-cover rounded-lg"
+                        />
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold">{item.name}</h3>
+                              <p className="text-sm text-muted-foreground">by {item.dealer}</p>
+                              {!inStock && (
+                                <Badge variant="destructive" className="mt-1">
+                                  Out of Stock
+                                </Badge>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeItem(item._id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeItem(item.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-primary">₹{item.price}</span>
-                            {item.originalPrice && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ₹{item.originalPrice}
+
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-primary">₹{item.price}</span>
+                              {item.originalPrice && (
+                                <span className="text-sm text-muted-foreground line-through">
+                                  ₹{item.originalPrice}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item._id, (item.quantity || 1) - 1)}
+                                disabled={(item.quantity || 1) <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-12 text-center font-medium">
+                                {item.quantity || 1}
                               </span>
-                            )}
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              disabled={!item.inStock}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="w-12 text-center font-medium">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              disabled={!item.inStock}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => updateQuantity(item._id, (item.quantity || 1) + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </CardContent>
               </Card>
 
@@ -240,34 +232,46 @@ const Cart = () => {
                     <span>Subtotal</span>
                     <span>₹{subtotal.toLocaleString()}</span>
                   </div>
-                  
+
                   {savings > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Savings</span>
                       <span>-₹{savings.toLocaleString()}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between">
                     <span>Shipping</span>
                     <span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span>
                   </div>
-                  
+
                   <div className="border-t pt-4">
                     <div className="flex justify-between font-semibold text-lg">
                       <span>Total</span>
                       <span>₹{total.toLocaleString()}</span>
                     </div>
                   </div>
-                  
-                  {/* 🔹 Changed checkout link here */}
-                  <Link to={hasInStockItems ? "/order" : "#"} className="block">
-                    <Button className="w-full" size="lg" disabled={!hasInStockItems}>
-                      Proceed to Checkout
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                  
+
+                  {/* Updated Proceed to Checkout */}
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={!hasInStockItems}
+                    onClick={() => {
+                      // Prepare cart data for checkout
+                      const checkoutCart = cartItems.filter(item => item.quantity > 0);
+
+                      // Save to localStorage so Checkout page can read it
+                      localStorage.setItem('checkoutCart', JSON.stringify(checkoutCart));
+
+                      // Navigate to Checkout page
+                      window.location.href = '/checkout';
+                    }}
+                  >
+                    Proceed to Checkout
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+
                   <Link to="/shop">
                     <Button variant="outline" className="w-full">
                       Continue Shopping
@@ -299,7 +303,7 @@ const Cart = () => {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

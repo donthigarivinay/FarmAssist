@@ -5,15 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  Filter, 
-  Grid, 
-  List, 
-  Star, 
-  ShoppingCart, 
-  Eye 
-} from 'lucide-react';
+import { Search, Filter, Grid, List, Star, ShoppingCart, Eye } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -40,7 +32,12 @@ interface Product {
 const Shop = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [category, setCategory] = useState('all categories');
+  const [sortOption, setSortOption] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<Product[]>([]);
 
   const categories = [
     'All Categories',
@@ -52,10 +49,18 @@ const Shop = () => {
     'Tools'
   ];
 
-  // ✅ Fetch products from backend
+  // ✅ Get current user email (fallback to 'guest')
+  const getCurrentUser = () => {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    return user?.email || 'guest';
+  };
+
+  const getCartKey = () => `cartItems_${getCurrentUser()}`;
+
+  // ✅ Fetch products
   const fetchProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/products"); // adjust if API is different
+      const res = await axios.get("http://localhost:5000/api/products");
       setProducts(res.data);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -64,25 +69,68 @@ const Shop = () => {
 
   useEffect(() => {
     fetchProducts();
+    const storedCart = localStorage.getItem(getCartKey());
+    if (storedCart) setCart(JSON.parse(storedCart));
   }, []);
+
+  const handleAddToCart = (product: Product) => {
+    // Check if item already exists in cart
+    const existingItem = cart.find((item) => item._id === product._id);
+    let updatedCart;
+    if (existingItem) {
+      updatedCart = cart.map((item) =>
+        item._id === product._id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+      );
+    } else {
+      updatedCart = [...cart, { ...product, quantity: 1 }];
+    }
+    setCart(updatedCart);
+    localStorage.setItem(getCartKey(), JSON.stringify(updatedCart));
+  };
+
+  // ✅ Filtering Logic
+  const filteredProducts = products
+    .filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .filter((p) =>
+      category === 'all categories' ? true : p.category.toLowerCase() === category.toLowerCase()
+    )
+    .filter((p) => {
+      const min = minPrice ? parseFloat(minPrice) : 0;
+      const max = maxPrice ? parseFloat(maxPrice) : Infinity;
+      return p.price >= min && p.price <= max;
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'rating':
+          return (b.rating ?? 0) - (a.rating ?? 0);
+        case 'newest':
+          return b._id.localeCompare(a._id);
+        default:
+          return 0;
+      }
+    });
 
   const renderStars = (rating: number = 0) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`h-4 w-4 ${
-          i < Math.floor(rating)
-            ? 'text-yellow-400 fill-yellow-400'
-            : 'text-gray-300'
-        }`}
+        className={`h-4 w-4 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
       />
     ));
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <Header cartItemsCount={3} userRole={null} isLoggedIn={false} />
-      
+      <Header cartItemsCount={cart.reduce((sum, item) => sum + (item.quantity || 1), 0)} userRole={null} isLoggedIn={false} />
+
       <main className="pt-16">
         {/* Page Header */}
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12">
@@ -123,14 +171,14 @@ const Shop = () => {
                   {/* Category */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Category</label>
-                    <Select>
+                    <Select onValueChange={(value) => setCategory(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category.toLowerCase()}>
-                            {category}
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat.toLowerCase()}>
+                            {cat}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -141,15 +189,25 @@ const Shop = () => {
                   <div>
                     <label className="text-sm font-medium mb-2 block">Price Range</label>
                     <div className="flex gap-2">
-                      <Input placeholder="Min" type="number" />
-                      <Input placeholder="Max" type="number" />
+                      <Input
+                        placeholder="Min"
+                        type="number"
+                        value={minPrice}
+                        onChange={(e) => setMinPrice(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Max"
+                        type="number"
+                        value={maxPrice}
+                        onChange={(e) => setMaxPrice(e.target.value)}
+                      />
                     </div>
                   </div>
 
                   {/* Sort By */}
                   <div>
                     <label className="text-sm font-medium mb-2 block">Sort By</label>
-                    <Select>
+                    <Select onValueChange={(value) => setSortOption(value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sort by" />
                       </SelectTrigger>
@@ -171,7 +229,7 @@ const Shop = () => {
               {/* Toolbar */}
               <div className="flex justify-between items-center mb-6">
                 <p className="text-muted-foreground">
-                  Showing {products.length} products
+                  Showing {filteredProducts.length} products
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -192,12 +250,14 @@ const Shop = () => {
               </div>
 
               {/* Products */}
-              <div className={`grid gap-6 ${
-                viewMode === 'grid' 
-                  ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' 
-                  : 'grid-cols-1'
-              }`}>
-                {products.map((product) => (
+              <div
+                className={`grid gap-6 ${
+                  viewMode === 'grid'
+                    ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                    : 'grid-cols-1'
+                }`}
+              >
+                {filteredProducts.map((product) => (
                   <Card key={product._id} className="group hover-lift">
                     <CardHeader className="p-0">
                       <div className="relative overflow-hidden rounded-t-lg">
@@ -226,9 +286,7 @@ const Shop = () => {
                         {product.name}
                       </CardTitle>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center">
-                          {renderStars(product.rating)}
-                        </div>
+                        <div className="flex items-center">{renderStars(product.rating)}</div>
                         {product.reviews && (
                           <span className="text-sm text-muted-foreground">
                             ({product.reviews})
@@ -241,9 +299,7 @@ const Shop = () => {
                         </p>
                       )}
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-primary">
-                          ₹{product.price}
-                        </span>
+                        <span className="text-xl font-bold text-primary">₹{product.price}</span>
                         {product.originalPrice && (
                           <span className="text-sm text-muted-foreground line-through">
                             ₹{product.originalPrice}
@@ -252,9 +308,10 @@ const Shop = () => {
                       </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex gap-2">
-                      <Button 
-                        className="flex-1" 
+                      <Button
+                        className="flex-1"
                         disabled={product.inStock === false}
+                        onClick={() => handleAddToCart(product)}
                       >
                         <ShoppingCart className="h-4 w-4 mr-2" />
                         Add to Cart
@@ -270,7 +327,7 @@ const Shop = () => {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
